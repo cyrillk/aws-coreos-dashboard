@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/gorilla/context"
 )
 
@@ -13,6 +14,16 @@ import (
 // https://github.com/aws/aws-sdk-go
 
 func main() {
+	awsAccessKeyID := os.Getenv("AWS_ACCESS_KEY_ID")
+	if awsAccessKeyID == "" {
+		panic("Missing AWS_ACCESS_KEY_ID environment variable")
+	}
+
+	awsSecretAccessKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
+	if awsSecretAccessKey == "" {
+		panic("Missing AWS_SECRET_ACCESS_KEY environment variable")
+	}
+
 	region := os.Getenv("AWS_REGION")
 	if region == "" {
 		panic("Missing AWS_REGION environment variable")
@@ -23,7 +34,12 @@ func main() {
 		panic("Missing VPC_ID environment variable")
 	}
 
-	config := &aws.Config{Region: aws.String(region)}
+	creds := credentials.NewStaticCredentials(awsAccessKeyID, awsSecretAccessKey, "")
+
+	config := &aws.Config{
+		Credentials: creds,
+		Region:      aws.String(region),
+	}
 
 	setup(config, vpcID)
 }
