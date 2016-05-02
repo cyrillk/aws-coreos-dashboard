@@ -1,7 +1,7 @@
 FROM golang:alpine
 
 RUN apk update && apk upgrade && \
-apk add wget && \
+apk add wget curl ca-certificates && \
 rm -rfv /var/cache/apk/* /tmp/* /var/tmp/*
 
 ENV FLEET_VERSION 0.11.5
