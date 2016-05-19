@@ -13,6 +13,11 @@ import (
 // https://github.com/bndr/gotabulate
 // https://github.com/aws/aws-sdk-go
 
+type ApplicationConfig struct {
+	FleetPort int
+	EtcdPort  int
+}
+
 func main() {
 	awsAccessKeyID := os.Getenv("AWS_ACCESS_KEY_ID")
 	if awsAccessKeyID == "" {
@@ -29,39 +34,46 @@ func main() {
 		panic("Missing AWS_REGION environment variable")
 	}
 
-	vpcID := os.Getenv("VPC_ID")
-	if vpcID == "" {
-		panic("Missing VPC_ID environment variable")
-	}
-
 	creds := credentials.NewStaticCredentials(awsAccessKeyID, awsSecretAccessKey, "")
 
-	config := &aws.Config{
+	awsConfig := &aws.Config{
 		Credentials: creds,
 		Region:      aws.String(region),
 	}
 
-	setup(config, vpcID)
+	appConfig := &ApplicationConfig{
+		FleetPort: 49153,
+		EtcdPort:  2379,
+	}
+
+	setup(awsConfig, appConfig)
 }
 
-func setup(config *aws.Config, vpcID string) {
-	http.HandleFunc("/", withParameters(handler, vpcID, config))
-	// http.HandleFunc("/services", servicesHandler)
+func setup(awsConfig *aws.Config, appConfig *ApplicationConfig) {
+	http.HandleFunc("/instances", wrappedHandler(handler, awsConfig, appConfig))
+	// http.HandleFunc("/machines", machinesHandler)
+	// http.HandleFunc("/units", servicesHandler)
 	// http.HandleFunc("/dockers", dockersHandler)
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":8080", nil) // TODO configurable port
 }
 
-func withParameters(fn http.HandlerFunc, vpcID string, config *aws.Config) http.HandlerFunc {
+func wrappedHandler(fn http.HandlerFunc, awsConfig *aws.Config, appConfig *ApplicationConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		context.Set(r, "vpcID", vpcID)
-		context.Set(r, "config", config)
+		context.Set(r, "awsConfig", awsConfig)
+		context.Set(r, "appConfig", appConfig)
 		fn(w, r)
 	}
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	vpcID := context.Get(r, "vpcID").(string)
-	config := context.Get(r, "config").(*aws.Config)
+	awsConfig := context.Get(r, "awsConfig").(*aws.Config)
+	appConfig := context.Get(r, "appConfig").(*ApplicationConfig)
 
-	fmt.Fprintf(w, BuildTableOfInstances(vpcID, config))
+	instances := Instances(awsConfig)
+
+	fmt.Println(len(instances))
+	fmt.Println("ready to filter")
+
+	Filter(instances, appConfig)
+	// fmt.Fprintf(w, Instances(awsConfig))
 }

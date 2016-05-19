@@ -40,11 +40,4 @@ func TestParseInstance(t *testing.T) {
 	if info.StateName != stateName {
 		t.Error("Expected "+stateName+", got ", info.StateName)
 	}
-
-	// info
-	// var v float64
-	// v = Average([]float64{1, 2})
-	// if v != 1.5 {
-	// 	t.Error("Expected 1.5, got ", v)
-	// }
 }
