@@ -95,8 +95,6 @@ func instancesHandler(w http.ResponseWriter, r *http.Request) {
 
 	instances := Instances(awsConfig)
 	filtered := FilterInstances(instances, appConfig)
-	// fmt.Println(len(instances))
-	// fmt.Println("ready to filter")
 	outputString := PrintInstances(filtered)
 	outputBytes := []byte(outputString)
 
