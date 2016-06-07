@@ -2,8 +2,27 @@ package main
 
 import "github.com/bndr/gotabulate"
 
-// BuildTable builds a table to output
-func BuildTable(headers []string, data [][]string) string {
+// PrintInstances prints instances
+func PrintInstances(instances []InstanceInfo) string {
+	var data [][]string
+
+	for _, instance := range instances {
+		s := []string{
+			instance.Name,
+			instance.PrivateIP,
+			instance.PublicIP,
+			instance.InstanceType,
+			instance.InstanceState,
+		}
+		data = append(data, s)
+	}
+
+	headers := []string{"Name", "Private IP", "Public IP", "Type", "State"}
+
+	return buildTable(headers, data)
+}
+
+func buildTable(headers []string, data [][]string) string {
 
 	t := gotabulate.Create(data)
 

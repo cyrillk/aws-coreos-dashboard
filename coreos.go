@@ -7,13 +7,26 @@ import (
 	"time"
 )
 
-// Filter should filter instances to use CoreOS
-func Filter(instances []InstanceInfo, appConfig *ApplicationConfig) []InstanceInfo {
+func pickIP(instance InstanceInfo, appConfig *ApplicationConfig) string {
+	if appConfig.IPAddresses == Private {
+		return instance.PrivateIP
+	} else if appConfig.IPAddresses == Public {
+		return instance.PublicIP
+	}
+	return ""
+}
+
+// FilterInstances should filter instances to use CoreOS
+func FilterInstances(instances []InstanceInfo, appConfig *ApplicationConfig) []InstanceInfo {
+
+	var fleetInstances []InstanceInfo
 
 	for _, instance := range instances {
 
-		if instance.PublicIP != "" {
-			address := fmt.Sprintf("%s:%d", instance.PublicIP, appConfig.FleetPort)
+		ip := pickIP(instance, appConfig)
+
+		if ip != "" {
+			address := fmt.Sprintf("%s:%d", ip, appConfig.FleetPort)
 
 			log.Println(address)
 
@@ -25,32 +38,17 @@ func Filter(instances []InstanceInfo, appConfig *ApplicationConfig) []InstanceIn
 			_, err := client.Get(fmt.Sprintf("http://%s/", address))
 			// conn, err := net.Dial("tcp", address)
 
-			if err != nil {
-				log.Println("Connection error:", err)
-			} else {
-				// defer conn.Close()
-				log.Println("OK")
+			if err == nil {
+				fleetInstances = append(fleetInstances, instance)
 			}
+			// if err != nil {
+			// 	log.Println("Connection error:", err)
+			// } else {
+			// 	// defer conn.Close()
+			// 	log.Println("OK")
+			// }
 		}
 	}
 
-	var data [][]string
-
-	for _, instance := range instances {
-
-		s := []string{
-			instance.Name,
-			instance.PrivateIP,
-			instance.PublicIP,
-			instance.InstanceType,
-			instance.InstanceState,
-		}
-		data = append(data, s)
-	}
-
-	headers := []string{"Name", "Private IP", "Public IP", "Type", "State"}
-
-	BuildTable(headers, data)
-
-	return instances
+	return fleetInstances
 }

@@ -12,13 +12,13 @@ func TestParseInstance(t *testing.T) {
 	privateIP := "1.1.1.1"
 	publicIP := "2.2.2.2"
 	instanceID := "XX"
-	stateName := "running"
+	instanceState := "running"
 
 	instance := &ec2.Instance{
 		PrivateIpAddress: &privateIP,
 		PublicIpAddress:  &publicIP,
 		InstanceId:       &instanceID,
-		State:            &ec2.InstanceState{Name: &stateName},
+		State:            &ec2.InstanceState{Name: &instanceState},
 	}
 
 	fmt.Println(instance)
@@ -33,11 +33,11 @@ func TestParseInstance(t *testing.T) {
 		t.Error("Expected "+publicIP+", got ", info.PublicIP)
 	}
 
-	if info.instanceID != instanceID {
-		t.Error("Expected "+instanceID+", got ", info.instanceID)
+	if info.InstanceID != instanceID {
+		t.Error("Expected "+instanceID+", got ", info.InstanceID)
 	}
 
-	if info.StateName != stateName {
-		t.Error("Expected "+stateName+", got ", info.StateName)
+	if info.InstanceState != instanceState {
+		t.Error("Expected "+instanceState+", got ", info.InstanceState)
 	}
 }

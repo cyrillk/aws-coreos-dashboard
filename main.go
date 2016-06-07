@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 
@@ -13,9 +12,18 @@ import (
 // https://github.com/bndr/gotabulate
 // https://github.com/aws/aws-sdk-go
 
+const (
+	// Private private
+	Private = "private"
+	// Public public
+	Public = "public"
+)
+
+// ApplicationConfig application configuration
 type ApplicationConfig struct {
-	FleetPort int
-	EtcdPort  int
+	FleetPort   int
+	EtcdPort    int
+	IPAddresses string
 }
 
 func main() {
@@ -41,16 +49,32 @@ func main() {
 		Region:      aws.String(region),
 	}
 
+	ipAddresses := os.Getenv("IP_ADDRESSES")
+	if ipAddresses != Private && ipAddresses != Public {
+		panic("Invalid IP_ADDRESSES environment variable")
+	}
+
+	// fleetPort, err := strconv.Atoi(os.Getenv("FLEET_PORT"))
+	// if err != nil {
+	// 	panic("Invalid FLEET_PORT environment variable")
+	// }
+	//
+	// etcdPort, err := strconv.Atoi(os.Getenv("ETCD_PORT"))
+	// if err != nil {
+	// 	panic("Invalid ETCD_PORT environment variable")
+	// }
+
 	appConfig := &ApplicationConfig{
-		FleetPort: 49153,
-		EtcdPort:  2379,
+		FleetPort:   49153,
+		EtcdPort:    2379,
+		IPAddresses: ipAddresses,
 	}
 
 	setup(awsConfig, appConfig)
 }
 
 func setup(awsConfig *aws.Config, appConfig *ApplicationConfig) {
-	http.HandleFunc("/instances", wrappedHandler(handler, awsConfig, appConfig))
+	http.HandleFunc("/", wrappedHandler(instancesHandler, awsConfig, appConfig))
 	// http.HandleFunc("/machines", machinesHandler)
 	// http.HandleFunc("/units", servicesHandler)
 	// http.HandleFunc("/dockers", dockersHandler)
@@ -65,15 +89,16 @@ func wrappedHandler(fn http.HandlerFunc, awsConfig *aws.Config, appConfig *Appli
 	}
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
+func instancesHandler(w http.ResponseWriter, r *http.Request) {
 	awsConfig := context.Get(r, "awsConfig").(*aws.Config)
 	appConfig := context.Get(r, "appConfig").(*ApplicationConfig)
 
 	instances := Instances(awsConfig)
+	filtered := FilterInstances(instances, appConfig)
+	// fmt.Println(len(instances))
+	// fmt.Println("ready to filter")
+	outputString := PrintInstances(filtered)
+	outputBytes := []byte(outputString)
 
-	fmt.Println(len(instances))
-	fmt.Println("ready to filter")
-
-	Filter(instances, appConfig)
-	// fmt.Fprintf(w, Instances(awsConfig))
+	w.Write(outputBytes)
 }
