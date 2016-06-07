@@ -3,7 +3,7 @@ default: build
 NAME=aws-coreos-dashboard
 
 build:
-	go build .	
+	go build .
 
 docker:
-	docker build -t $(NAME) .
+	docker build --force-rm -t $(NAME) .
