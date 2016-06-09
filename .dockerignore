@@ -1,0 +1,5 @@
+.*
+aws-coreos-dashboard
+Dockerfile
+Makefile
+README.md
