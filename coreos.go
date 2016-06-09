@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 )
@@ -14,9 +13,8 @@ type wrappedInstanceInfo struct {
 
 const requestTimeout = 300
 
-func worker(id int, jobs <-chan InstanceInfo, results chan<- wrappedInstanceInfo, appConfig *ApplicationConfig) {
+func worker(jobs <-chan InstanceInfo, results chan<- wrappedInstanceInfo, appConfig *ApplicationConfig) {
 	for instance := range jobs {
-		log.Println("worker", id, "processing job", instance.PrivateIP)
 
 		timeout := time.Duration(requestTimeout * time.Millisecond)
 		client := http.Client{
@@ -49,10 +47,12 @@ func FilterInstances(instances []InstanceInfo, appConfig *ApplicationConfig) []I
 	jobs := make(chan InstanceInfo, len(instances))
 	results := make(chan wrappedInstanceInfo, len(instances))
 
-	for n := range instances {
-		go worker(n, jobs, results, appConfig)
+	// creates workers
+	for _ = range instances {
+		go worker(jobs, results, appConfig)
 	}
 
+	// run jobs
 	for _, instance := range instances {
 		jobs <- instance
 	}

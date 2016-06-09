@@ -6,16 +6,17 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/gorilla/context"
+	"github.com/gin-gonic/gin"
 )
 
 // https://github.com/bndr/gotabulate
 // https://github.com/aws/aws-sdk-go
+// https://github.com/gin-gonic/gin
 
 const (
-	// Private private
+	// Private private IP address
 	Private = "private"
-	// Public public
+	// Public public IP address
 	Public = "public"
 )
 
@@ -27,6 +28,42 @@ type ApplicationConfig struct {
 }
 
 func main() {
+	awsConfig := awsConfig()
+	appConfig := appConfig()
+
+	router := gin.Default()
+	router.Static("/assets", "./assets")
+	router.LoadHTMLGlob("templates/*")
+	// router.StaticFile("/favicon.ico", "./assets/favicon.ico")
+
+	// http.HandleFunc("/machines", machinesHandler)
+	// http.HandleFunc("/units", servicesHandler)
+	// http.HandleFunc("/dockers", dockersHandler)
+
+	router.GET("/", func(c *gin.Context) {
+		instances := Instances(awsConfig)
+		filtered := FilterInstances(instances, appConfig)
+		outputString := PrintInstances(filtered)
+		// c.String(http.StatusOK, outputString)
+
+		c.HTML(http.StatusOK, "index.tmpl", gin.H{
+			"body": outputString,
+		})
+	})
+
+	router.GET("/instances", func(c *gin.Context) {
+		instances := Instances(awsConfig)
+		filtered := FilterInstances(instances, appConfig)
+		outputString := PrintInstances(filtered)
+		c.String(http.StatusOK, outputString)
+	})
+
+	// By default it serves on :8080 unless a
+	// PORT environment variable was defined.
+	router.Run()
+}
+
+func awsConfig() *aws.Config {
 	awsAccessKeyID := os.Getenv("AWS_ACCESS_KEY_ID")
 	if awsAccessKeyID == "" {
 		panic("Missing AWS_ACCESS_KEY_ID environment variable")
@@ -44,11 +81,13 @@ func main() {
 
 	creds := credentials.NewStaticCredentials(awsAccessKeyID, awsSecretAccessKey, "")
 
-	awsConfig := &aws.Config{
+	return &aws.Config{
 		Credentials: creds,
 		Region:      aws.String(region),
 	}
+}
 
+func appConfig() *ApplicationConfig {
 	ipAddresses := os.Getenv("IP_ADDRESSES")
 	if ipAddresses != Private && ipAddresses != Public {
 		panic("Invalid IP_ADDRESSES environment variable")
@@ -64,39 +103,9 @@ func main() {
 	// 	panic("Invalid ETCD_PORT environment variable")
 	// }
 
-	appConfig := &ApplicationConfig{
+	return &ApplicationConfig{
 		FleetPort:   49153,
 		EtcdPort:    2379,
 		IPAddresses: ipAddresses,
 	}
-
-	setup(awsConfig, appConfig)
-}
-
-func setup(awsConfig *aws.Config, appConfig *ApplicationConfig) {
-	http.HandleFunc("/", wrappedHandler(instancesHandler, awsConfig, appConfig))
-	// http.HandleFunc("/machines", machinesHandler)
-	// http.HandleFunc("/units", servicesHandler)
-	// http.HandleFunc("/dockers", dockersHandler)
-	http.ListenAndServe(":8080", nil) // TODO configurable port
-}
-
-func wrappedHandler(fn http.HandlerFunc, awsConfig *aws.Config, appConfig *ApplicationConfig) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		context.Set(r, "awsConfig", awsConfig)
-		context.Set(r, "appConfig", appConfig)
-		fn(w, r)
-	}
-}
-
-func instancesHandler(w http.ResponseWriter, r *http.Request) {
-	awsConfig := context.Get(r, "awsConfig").(*aws.Config)
-	appConfig := context.Get(r, "appConfig").(*ApplicationConfig)
-
-	instances := Instances(awsConfig)
-	filtered := FilterInstances(instances, appConfig)
-	outputString := PrintInstances(filtered)
-	outputBytes := []byte(outputString)
-
-	w.Write(outputBytes)
 }
