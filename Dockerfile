@@ -1,6 +1,6 @@
 FROM golang:1.6-alpine
 
-RUN apk add --no-cache --upgrade bash
+RUN apk add --no-cache --upgrade bash ca-certificates
 
 COPY . /go/src/github.com/cyrillk/aws-coreos-dashboard
 WORKDIR /go/src/github.com/cyrillk/aws-coreos-dashboard
