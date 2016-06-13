@@ -34,33 +34,52 @@ func main() {
 	router := gin.Default()
 	router.Static("/assets", "./assets")
 	router.LoadHTMLGlob("templates/*")
-	// router.StaticFile("/favicon.ico", "./assets/favicon.ico")
 
-	// http.HandleFunc("/machines", machinesHandler)
 	// http.HandleFunc("/units", servicesHandler)
 	// http.HandleFunc("/dockers", dockersHandler)
 
 	router.GET("/", func(c *gin.Context) {
-		instances := Instances(awsConfig)
-		filtered := FilterInstances(instances, appConfig)
-		outputString := PrintInstances(filtered)
-		// c.String(http.StatusOK, outputString)
+		handleMachines(c, awsConfig, appConfig)
+	})
 
-		c.HTML(http.StatusOK, "index.tmpl", gin.H{
-			"body": outputString,
-		})
+	router.GET("/machines", func(c *gin.Context) {
+		handleMachines(c, awsConfig, appConfig)
 	})
 
 	router.GET("/instances", func(c *gin.Context) {
-		instances := Instances(awsConfig)
-		filtered := FilterInstances(instances, appConfig)
-		outputString := PrintInstances(filtered)
-		c.String(http.StatusOK, outputString)
+		handleInstances(c, awsConfig, appConfig)
 	})
 
 	// By default it serves on :8080 unless a
 	// PORT environment variable was defined.
 	router.Run()
+}
+
+func handleMachines(c *gin.Context, awsConfig *aws.Config, appConfig *ApplicationConfig) {
+	instances := Instances(awsConfig)
+	filtered := FilterInstances(instances, appConfig)
+	grouped := GroupInstances(filtered, appConfig)
+
+	var body string
+
+	for _, group := range grouped {
+		body = body + "\n" + PrintInstances(group)
+	}
+
+	c.HTML(http.StatusOK, "index.tmpl", gin.H{
+		"body": body,
+	})
+}
+
+func handleInstances(c *gin.Context, awsConfig *aws.Config, appConfig *ApplicationConfig) {
+	instances := Instances(awsConfig)
+	filtered := FilterInstances(instances, appConfig)
+	sorted := SortInstances(filtered)
+	body := PrintInstances(sorted)
+
+	c.HTML(http.StatusOK, "index.tmpl", gin.H{
+		"body": body,
+	})
 }
 
 func awsConfig() *aws.Config {

@@ -26,11 +26,11 @@ func (a nameSorter) Less(i, j int) bool { return a[i].Name < a[j].Name }
 
 // Instances retrives a list of EC2 instances
 func Instances(awsConfig *aws.Config) []InstanceInfo {
-	return sortInstances(getInstances(awsConfig))
+	return getInstances(awsConfig)
 }
 
 // SortInstances sorts instances
-func sortInstances(instances []InstanceInfo) []InstanceInfo {
+func SortInstances(instances []InstanceInfo) []InstanceInfo {
 	sort.Sort(nameSorter(instances))
 	return instances
 }
