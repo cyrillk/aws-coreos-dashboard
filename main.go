@@ -32,14 +32,14 @@ func main() {
 	appConfig := appConfig()
 
 	router := gin.Default()
-	router.Static("/assets", "./assets")
-	router.LoadHTMLGlob("templates/*")
+	router.Static("/resources/assets", "./resources/assets")
+	router.LoadHTMLGlob("resources/templates/*")
 
 	// http.HandleFunc("/units", servicesHandler)
 	// http.HandleFunc("/dockers", dockersHandler)
 
 	router.GET("/", func(c *gin.Context) {
-		handleMachines(c, awsConfig, appConfig)
+		handleInstances(c, awsConfig, appConfig)
 	})
 
 	router.GET("/machines", func(c *gin.Context) {
@@ -60,14 +60,14 @@ func handleMachines(c *gin.Context, awsConfig *aws.Config, appConfig *Applicatio
 	filtered := FilterInstances(instances, appConfig)
 	grouped := GroupInstances(filtered, appConfig)
 
-	var body string
+	var sorted [][]InstanceInfo
 
-	for _, group := range grouped {
-		body = body + "\n" + PrintInstances(group)
+	for _, group := range SortGroups(grouped) {
+		sorted = append(sorted, SortInstances(group))
 	}
 
-	c.HTML(http.StatusOK, "index.tmpl", gin.H{
-		"body": body,
+	c.HTML(http.StatusOK, "machines.html", gin.H{
+		"groups": sorted,
 	})
 }
 
@@ -77,7 +77,7 @@ func handleInstances(c *gin.Context, awsConfig *aws.Config, appConfig *Applicati
 	sorted := SortInstances(filtered)
 	body := PrintInstances(sorted)
 
-	c.HTML(http.StatusOK, "index.tmpl", gin.H{
+	c.HTML(http.StatusOK, "index.html", gin.H{
 		"body": body,
 	})
 }

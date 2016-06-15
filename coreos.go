@@ -14,17 +14,6 @@ type wrappedInstanceInfo struct {
 	passed       bool
 }
 
-// type localInstanceInfo interface {
-// }
-// type emptyInstanceInfo struct {
-// 	localInstanceInfo
-// }
-// type clusteredInstanceInfo struct {
-// 	// localInstanceInfo
-// 	InstanceInfo  InstanceInfo
-// 	FleetMachines []fleetMachine
-// }
-
 type fleetMachines struct {
 	Machines []fleetMachine `json:"machines"`
 }
@@ -121,6 +110,18 @@ func (a machineSorter) Less(i, j int) bool { return a[i].ID < a[j].ID }
 
 func sortMachines(m []fleetMachine) []fleetMachine {
 	sort.Sort(machineSorter(m))
+	return m
+}
+
+type groupSorter [][]InstanceInfo
+
+func (a groupSorter) Len() int           { return len(a) }
+func (a groupSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a groupSorter) Less(i, j int) bool { return a[i][0].PrivateIP < a[j][0].PrivateIP }
+
+// SortGroups sorts groups of instances
+func SortGroups(m [][]InstanceInfo) [][]InstanceInfo {
+	sort.Sort(groupSorter(m))
 	return m
 }
 
