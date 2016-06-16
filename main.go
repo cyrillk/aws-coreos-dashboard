@@ -35,11 +35,14 @@ func main() {
 	router.Static("/resources/assets", "./resources/assets")
 	router.LoadHTMLGlob("resources/templates/*")
 
-	// http.HandleFunc("/units", servicesHandler)
 	// http.HandleFunc("/dockers", dockersHandler)
 
 	router.GET("/", func(c *gin.Context) {
 		handleInstances(c, awsConfig, appConfig)
+	})
+
+	router.GET("/services", func(c *gin.Context) {
+		handleServices(c, awsConfig, appConfig)
 	})
 
 	router.GET("/machines", func(c *gin.Context) {
@@ -55,15 +58,34 @@ func main() {
 	router.Run()
 }
 
+func handleServices(c *gin.Context, awsConfig *aws.Config, appConfig *ApplicationConfig) {
+	instances := Instances(awsConfig)
+	filtered := FilterInstances(instances, appConfig)
+	groupedInstances := GroupInstances(filtered, appConfig)
+
+	var servicesModule = new(CoreOSServicesModule)
+	groupedUnits := servicesModule.RetrieveServices(groupedInstances, appConfig)
+
+	var sorted [][]CoreOSService
+
+	for _, group := range servicesModule.SortGroupsServices(groupedUnits) {
+		sorted = append(sorted, servicesModule.SortServices(group))
+	}
+
+	c.HTML(http.StatusOK, "services.html", gin.H{
+		"groups": sorted,
+	})
+}
+
 func handleMachines(c *gin.Context, awsConfig *aws.Config, appConfig *ApplicationConfig) {
 	instances := Instances(awsConfig)
 	filtered := FilterInstances(instances, appConfig)
 	grouped := GroupInstances(filtered, appConfig)
 
-	var sorted [][]InstanceInfo
+	var sorted [][]CoreOSMachine
 
 	for _, group := range SortGroups(grouped) {
-		sorted = append(sorted, SortInstances(group))
+		sorted = append(sorted, SortMachines(group))
 	}
 
 	c.HTML(http.StatusOK, "machines.html", gin.H{
