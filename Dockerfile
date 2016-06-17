@@ -11,5 +11,5 @@ RUN go install github.com/cyrillk/aws-coreos-dashboard
 
 EXPOSE 8080
 
-CMD [""]
 ENTRYPOINT ["docker-entrypoint.sh"]
+CMD [""]

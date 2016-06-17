@@ -16,5 +16,5 @@ or
 -e "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" \
 -e "AWS_REGION=eu-west-1" \
 -e "IP_ADDRESSES=private" \
-aws-coreos-dashboard
+cyrillk/aws-coreos-dashboard
 ```
