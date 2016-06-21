@@ -7,44 +7,43 @@
     <meta name="description" content="AWS CoreOS Services Dashboard">
     <link rel="shortcut icon" href="resources/assets/favicon.ico" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/picnicss/6.1.1/picnic.min.css">
+    <link rel=stylesheet href="https://s3-us-west-2.amazonaws.com/colors-css/2.2.0/colors.min.css">
 </head>
 
 <body>
-  <div style="width:80%; margin:0 auto; margin-top: 30px;">
-    <div class="flex one center">
-      {{range $group := .groups}}
-      <div class="flex one center">
-        <h3>
-          {{range $machine := $group.Machines}}
-            {{$machine.Name}} [{{$machine.PrivateIP}}]&nbsp;
-          {{end}}
-        </h3>
-      </div>
-      <table class="primary">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th width="15%">Active State</th>
-            <th width="15%">Load State</th>
-            <th width="15%">Sub State</th>
-            <th width="15%">Machine ID</th>
-          </tr>
-        </thead>
-        <tbody>
-          {{range $service := $group.Services}}
-          <tr>
-            <td>{{$service.Name}}</td>
-            <td>{{$service.ActiveState}}</td>
-            <td>{{$service.LoadState}}</td>
-            <td>{{$service.SubState}}</td>
-            <td>{{$service.MachineID}}</td>
-          </tr>
-          {{end}}
-        </tbody>
-      </table>
-      {{end}}
+    <div style="width:80%; margin:0 auto; margin-top: 30px; margin-bottom: 30px;" class="flex one center">
+        {{range $group := .groups}}
+        <div class="flex three left">
+            {{range $machine := $group.Machines}}
+                <h3><span class="label normal">{{$machine.Name}} [{{$machine.PrivateIP}}]</span></h3>
+            {{end}}
+        </div>
+        <div class="flex one left">
+            <table class="primary">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th width="15%">Active State</th>
+                        <th width="15%">Load State</th>
+                        <th width="15%">Sub State</th>
+                        <th width="15%">Machine ID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range $service := $group.Services}}
+                    <tr>
+                        <td>{{$service.Name}}</td>
+                        <td>{{$service.ActiveState}}</td>
+                        <td>{{$service.LoadState}}</td>
+                        <td>{{$service.SubState}}</td>
+                        <td>{{$service.MachineID}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+        {{end}}
     </div>
-  </div>
 </body>
 
 </html>
