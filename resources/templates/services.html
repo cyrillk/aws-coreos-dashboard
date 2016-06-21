@@ -13,6 +13,13 @@
   <div style="width:80%; margin:0 auto; margin-top: 30px;">
     <div class="flex one center">
       {{range $group := .groups}}
+      <div class="flex one center">
+        <h3>
+          {{range $machine := $group.Machines}}
+            {{$machine.Name}} [{{$machine.PrivateIP}}]&nbsp;
+          {{end}}
+        </h3>
+      </div>
       <table class="primary">
         <thead>
           <tr>
@@ -24,7 +31,7 @@
           </tr>
         </thead>
         <tbody>
-          {{range $service := $group}}
+          {{range $service := $group.Services}}
           <tr>
             <td>{{$service.Name}}</td>
             <td>{{$service.ActiveState}}</td>

@@ -38,7 +38,7 @@ func main() {
 	// http.HandleFunc("/dockers", dockersHandler)
 
 	router.GET("/", func(c *gin.Context) {
-		handleInstances(c, awsConfig, appConfig)
+		handleMachines(c, awsConfig, appConfig)
 	})
 
 	router.GET("/services", func(c *gin.Context) {
@@ -64,16 +64,11 @@ func handleServices(c *gin.Context, awsConfig *aws.Config, appConfig *Applicatio
 	groupedInstances := GroupInstances(filtered, appConfig)
 
 	var servicesModule = new(CoreOSServicesModule)
-	groupedUnits := servicesModule.RetrieveServices(groupedInstances, appConfig)
-
-	var sorted [][]CoreOSService
-
-	for _, group := range servicesModule.SortGroupsServices(groupedUnits) {
-		sorted = append(sorted, servicesModule.SortServices(group))
-	}
+	groupedServices := servicesModule.RetrieveServices(groupedInstances, appConfig)
+	sortedServices := servicesModule.Sort(groupedServices)
 
 	c.HTML(http.StatusOK, "services.html", gin.H{
-		"groups": sorted,
+		"groups": sortedServices,
 	})
 }
 

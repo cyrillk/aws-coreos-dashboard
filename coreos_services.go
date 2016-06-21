@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"sort"
 	"time"
@@ -31,6 +32,12 @@ type CoreOSService struct {
 	PrivateIP   string
 }
 
+// CoreOSCluster CoreOS cluster
+type CoreOSCluster struct {
+	Services []CoreOSService
+	Machines []CoreOSMachine
+}
+
 // http://52.48.119.163:49153/fleet/v1/units
 // http://52.48.119.163:49153/fleet/v1/machines
 // http://52.48.119.163:49153/fleet/v1/state
@@ -47,22 +54,41 @@ func (a servicesSorter) Len() int           { return len(a) }
 func (a servicesSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a servicesSorter) Less(i, j int) bool { return a[i].Name < a[j].Name }
 
-// SortServices sorts CoreOS services
-func (coreOSServicesModule CoreOSServicesModule) SortServices(m []CoreOSService) []CoreOSService {
+// SortServices sorts services
+func SortServices(m []CoreOSService) []CoreOSService {
 	sort.Sort(servicesSorter(m))
 	return m
 }
 
-type servicesGroupSorter [][]CoreOSService
+type clusterSorter []CoreOSCluster
 
-func (a servicesGroupSorter) Len() int           { return len(a) }
-func (a servicesGroupSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a servicesGroupSorter) Less(i, j int) bool { return a[i][0].PrivateIP < a[j][0].PrivateIP }
+func (a clusterSorter) Len() int      { return len(a) }
+func (a clusterSorter) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a clusterSorter) Less(i, j int) bool {
+	return a[i].Machines[0].PrivateIP < a[j].Machines[0].PrivateIP
+}
 
-// SortServices sorts groups of services
-func (coreOSServicesModule CoreOSServicesModule) SortGroupsServices(m [][]CoreOSService) [][]CoreOSService {
-	sort.Sort(servicesGroupSorter(m))
+// SortClusters sorts clusteres
+func SortClusters(m []CoreOSCluster) []CoreOSCluster {
+	sort.Sort(clusterSorter(m))
 	return m
+}
+
+// Sort sorts
+func (coreOSServicesModule CoreOSServicesModule) Sort(clusteredServices []CoreOSCluster) []CoreOSCluster {
+	var sorted []CoreOSCluster
+
+	for _, group := range SortClusters(clusteredServices) {
+		sortedMachines := SortMachines(group.Machines)
+		sortedServices := SortServices(group.Services)
+
+		sorted = append(sorted, CoreOSCluster{
+			Machines: sortedMachines,
+			Services: sortedServices,
+		})
+	}
+
+	return sorted
 }
 
 func parseFleetStatesJSON(body []byte) fleetStates {
@@ -78,10 +104,10 @@ func parseFleetStatesJSON(body []byte) fleetStates {
 
 // RetrieveServices retrieves unit services
 func (coreOSServicesModule CoreOSServicesModule) RetrieveServices(
-	groupedMachines [][]CoreOSMachine, appConfig *ApplicationConfig) [][]CoreOSService {
+	groupedMachines [][]CoreOSMachine, appConfig *ApplicationConfig) []CoreOSCluster {
 
-	jobs := make(chan CoreOSMachine, len(groupedMachines))
-	results := make(chan []CoreOSService, len(groupedMachines))
+	jobs := make(chan []CoreOSMachine, len(groupedMachines))
+	results := make(chan CoreOSCluster, len(groupedMachines))
 
 	// creates workers
 	for _ = range groupedMachines {
@@ -90,12 +116,12 @@ func (coreOSServicesModule CoreOSServicesModule) RetrieveServices(
 
 	// run jobs
 	for _, group := range groupedMachines {
-		jobs <- group[0] // TODO make it different (aggreagte results maybe)
+		jobs <- group
 	}
 
 	close(jobs)
 
-	var resultServices [][]CoreOSService
+	var resultServices []CoreOSCluster
 
 	for _ = range groupedMachines {
 		result := <-results
@@ -105,8 +131,10 @@ func (coreOSServicesModule CoreOSServicesModule) RetrieveServices(
 	return resultServices
 }
 
-func servicesWorker(jobs <-chan CoreOSMachine, results chan<- []CoreOSService, appConfig *ApplicationConfig) {
-	for machine := range jobs {
+func servicesWorker(jobs <-chan []CoreOSMachine, results chan<- CoreOSCluster, appConfig *ApplicationConfig) {
+	for machines := range jobs {
+
+		machine := machines[rand.Intn(len(machines))] // TODO make it different possibly
 
 		client := http.Client{
 			Timeout: time.Duration(statesRequestTimeout * time.Millisecond),
@@ -146,6 +174,11 @@ func servicesWorker(jobs <-chan CoreOSMachine, results chan<- []CoreOSService, a
 			})
 		}
 
-		results <- services
+		clustered := CoreOSCluster{
+			Services: services,
+			Machines: machines,
+		}
+
+		results <- clustered
 	}
 }
