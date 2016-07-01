@@ -5,41 +5,66 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="AWS CoreOS Machines Dashboard">
-    <link rel="shortcut icon" href="resources/assets/favicon.ico" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/picnicss/6.1.1/picnic.min.css">
+    <link rel="shortcut icon" href="resources/assets/favicon.ico"></link>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/picnicss/6.1.1/picnic.min.css"></link>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.0.0/jquery.min.js"></script>
+
+    <style type="text/css">
+        .hideAll {
+            visibility: hidden;
+        }
+
+        /*.cover {
+            background: url("resources/assets/hex-loader2.gif") no-repeat scroll center center #FFF;
+            position: absolute;
+            height: 100%;
+            width: 100%;
+        }*/
+
+        body {
+            width: 85%;
+            margin: 0 auto;
+            margin-top: 50px;
+        }
+    </style>
+
+    <script type="text/javascript">
+
+        $(window).on("load", function() {
+            $("#tabs").removeClass("hideAll");
+        });
+    </script>
 </head>
 
 <body>
-  <div style="width:80%; margin:0 auto; margin-top: 30px;">
-    <div class="flex one center">
-      {{range $group := .groups}}
-      <table class="primary">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th width="11%">Private IP</th>
-            <th width="11%">Public IP</th>
-            <th width="11%">Type</th>
-            <th width="11%">State</th>
-            <th width="15%">Machine ID</th>
-          </tr>
-        </thead>
-        <tbody>
-          {{range $instance := $group}}
-          <tr>
-            <td>{{$instance.Name}}</td>
-            <td>{{$instance.PrivateIP}}</td>
-            <td>{{$instance.PublicIP}}</td>
-            <td>{{$instance.InstanceType}}</td>
-            <td>{{$instance.InstanceState}}</td>
-            <td>{{$instance.MachineID}}</td>
-          </tr>
-          {{end}}
-        </tbody>
-      </table>
-      {{end}}
+    <div id="tabs" class="hideAll flex one center">
+        {{range $group := .groups}}
+        <table class="primary">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th width="11%">Private IP</th>
+                    <th width="11%">Public IP</th>
+                    <th width="11%">Type</th>
+                    <th width="11%">State</th>
+                    <th width="15%">Machine ID</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range $instance := $group}}
+                <tr>
+                    <td>{{$instance.Name}}</td>
+                    <td>{{$instance.PrivateIP}}</td>
+                    <td>{{$instance.PublicIP}}</td>
+                    <td>{{$instance.InstanceType}}</td>
+                    <td>{{$instance.InstanceState}}</td>
+                    <td>{{$instance.MachineID}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+        {{end}}
     </div>
-  </div>
 </body>
 
 </html>
