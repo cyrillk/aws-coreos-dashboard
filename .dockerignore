@@ -1,4 +1,5 @@
 .*
+vendor
 aws-coreos-dashboard
 Dockerfile
 Makefile

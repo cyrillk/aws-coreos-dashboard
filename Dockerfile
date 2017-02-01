@@ -1,15 +1,11 @@
-FROM golang:1.6-alpine
+FROM golang:1.7-onbuild
 
-RUN apk add --no-cache --upgrade bash ca-certificates
+RUN apt-get update && \
+apt-get install -y bash ca-certificates && \
+rm -rf /var/lib/apt/lists/*
 
-COPY . /go/src/github.com/cyrillk/aws-coreos-dashboard
-WORKDIR /go/src/github.com/cyrillk/aws-coreos-dashboard
-RUN mv docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-
-RUN go build github.com/cyrillk/aws-coreos-dashboard
-RUN go install github.com/cyrillk/aws-coreos-dashboard
+ENV GIN_MODE=debug
+ENV PORT=8080
 
 EXPOSE 8080
 
-ENTRYPOINT ["docker-entrypoint.sh"]
-CMD [""]
